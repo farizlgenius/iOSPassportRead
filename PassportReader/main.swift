@@ -78,75 +78,70 @@ print(s)
 
 print(TripleDesEnc(input: "781723860C06C2264608F919887022120B795240CB7049B01C19B33E32804F0B", key: "AB94FDECF2674FDFB9B391F85D7F76F2"))
 //B9B391F85D7F76F2
-// 3DES Encryption
 
+// 3DES Encryption
 func TripleDesEnc(input:String,key:String) -> String {
-    
+    // Divide Input to 64 bit Block
+    let strArr:[String] = DivideInputToEach64BitBlock(HexInput: input)
     // Divided Key
     let index = key.index(key.startIndex,offsetBy: 16)
     let firstKey:String = String(key[..<index])
     let secondKey:String = String(key[index...])
-    print("First Key : \(firstKey)")
-    print("Second Key : \(secondKey)")
-    //MARK: Round 1 - Encryption
     
+    // 1st Round
+    let fBlockfRound = DESEnc(Input: strArr[0], Key: firstKey)
+    // 2nd Round
+
+    // 3rd Round
+    
+    return DESEnc(Input: input, Key: firstKey)
+}
+
+func DivideInputToEach64BitBlock(HexInput:String)->[String]{
+    return HexInput.split(by: 16)
+}
+
+func DESEnc(Input:String,Key:String,Iv:String = "0000000000000000")->String{
+    //MARK: Round 1 - Encryption
     let Option = UInt32(kCCEncrypt)
-    let Algorithm = UInt32(kCCAlgorithm3DES)
+    let Algorithm = UInt32(kCCAlgorithmDES)
     //let Key = firstKey.hexadecimal! as NSData
-    let Key = key.hexadecimal! as NSData
-    let KeyLength = size_t(kCCKeySize3DES)
-    let Data = input.hexadecimal! as NSData
-    //let Iv = "0000000000000000".hexadecimal! as NSData
+    let Key = Key.hexadecimal! as NSData
+    let KeyLength = size_t(kCCKeySizeDES)
+    let Data = Input.hexadecimal! as NSData
+    let iv = Iv.hexadecimal! as NSData
     let cryptData1 = NSMutableData(length: Int(Data.length))!
     var numBytesEncrypted :size_t = 0
     let cryptoStatus = CCCrypt(Option,Algorithm,0,Key.bytes,KeyLength,nil, Data.bytes, Data.count, cryptData1.mutableBytes, cryptData1.length,&numBytesEncrypted)
-    
     print(cryptoStatus)
-    
     if UInt32(cryptoStatus) == UInt32(kCCSuccess) {
         //Convert NSMutualData to NSData to Data
         let data = NSData(data: cryptData1 as Data) as Data
         return data.hexadecimal
         
-//        //MARK: Round 2 - Encryption
-//        
-//        let data = NSData(data: cryptData1 as Data)
-//        let Option = UInt32(kCCEncrypt)
-//        let Algorithm = UInt32(kCCAlgorithmDES)
-//        let Key = secondKey.hexadecimal! as NSData
-//        let KeyLength = size_t(kCCKeySizeDES)
-//        let Data = data
-//        //let Iv = "0000000000000001".hexadecimal! as NSData
-//        let cryptData2    = NSMutableData(length: Int(Data.length))!
-//        var numBytesEncrypted :size_t = 0
-//        let cryptoStatus = CCCrypt(Option,Algorithm,0,Key.bytes,KeyLength,nil, Data.bytes, Data.count, cryptData2.mutableBytes, cryptData2.length,&numBytesEncrypted)
-//        
-//        //return data.hexadecimal
-//        if UInt32(cryptoStatus) == UInt32(kCCSuccess) {
-//            
-//            //MARK: Round 3 - Encryption
-//            
-//            let data = NSData(data: cryptData2 as Data)
-//            let Option = UInt32(kCCEncrypt)
-//            let Algorithm = UInt32(kCCAlgorithmDES)
-//            let Key = firstKey.hexadecimal! as NSData
-//            let KeyLength = size_t(kCCKeySizeDES)
-//            let Data = data
-//            //let Iv = "0000000000000001".hexadecimal! as NSData
-//            let cryptData3    = NSMutableData(length: Int(Data.length))!
-//            var numBytesEncrypted :size_t = 0
-//            let cryptoStatus = CCCrypt(Option,Algorithm,0,Key.bytes,KeyLength,nil, Data.bytes, Data.count, cryptData3.mutableBytes, cryptData3.length,&numBytesEncrypted)
-//            if UInt32(cryptoStatus) == UInt32(kCCSuccess){
-//                // Convert NSMutualData to NSData to Data
-//                let data = NSData(data: cryptData3 as Data) as Data
-//                return data.hexadecimal
-//            }else{
-//                return "Fail"
-//            }
-//        }else{
-//            return "Fail"
-//        }
-//        
+    }else{
+        return "Fail"
+    }
+}
+
+func DESDec(Input:String,Key:String,Iv:String = "0000000000000000")->String{
+    //MARK: Round 1 - Encryption
+    let Option = UInt32(kCCDecrypt)
+    let Algorithm = UInt32(kCCAlgorithmDES)
+    //let Key = firstKey.hexadecimal! as NSData
+    let Key = Key.hexadecimal! as NSData
+    let KeyLength = size_t(kCCKeySizeDES)
+    let Data = Input.hexadecimal! as NSData
+    let iv = Iv.hexadecimal! as NSData
+    let cryptData1 = NSMutableData(length: Int(Data.length))!
+    var numBytesEncrypted :size_t = 0
+    let cryptoStatus = CCCrypt(Option,Algorithm,0,Key.bytes,KeyLength,nil, Data.bytes, Data.count, cryptData1.mutableBytes, cryptData1.length,&numBytesEncrypted)
+    print(cryptoStatus)
+    if UInt32(cryptoStatus) == UInt32(kCCSuccess) {
+        //Convert NSMutualData to NSData to Data
+        let data = NSData(data: cryptData1 as Data) as Data
+        return data.hexadecimal
+        
     }else{
         return "Fail"
     }
@@ -179,6 +174,19 @@ extension String {
         
         return data
     }
+    
+    func split(by length: Int) -> [String] {
+            var startIndex = self.startIndex
+            var results = [Substring]()
+
+            while startIndex < self.endIndex {
+                let endIndex = self.index(startIndex, offsetBy: length, limitedBy: self.endIndex) ?? self.endIndex
+                results.append(self[startIndex..<endIndex])
+                startIndex = endIndex
+            }
+
+            return results.map { String($0) }
+        }
     
 }
 
